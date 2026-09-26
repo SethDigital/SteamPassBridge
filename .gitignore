@@ -1,0 +1,6 @@
+/bin/
+/dist/
+/vendor/*.exe
+/SteamPassBridge.exe
+/SteamPassBridge.log
+*.log

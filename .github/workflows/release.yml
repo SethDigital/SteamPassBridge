@@ -1,0 +1,22 @@
+# Push a tag like v1.0.0 to build on a clean Windows machine and publish the zip as a GitHub release.
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and package
+        shell: cmd
+        run: release.cmd
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: SteamPassBridge ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/*.zip
+            dist/*.zip.sha256
