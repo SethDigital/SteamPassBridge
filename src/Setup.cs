@@ -93,7 +93,7 @@ namespace SteamPassBridge
             var t = lnk.GetType();
             t.InvokeMember("TargetPath", BindingFlags.SetProperty, null, lnk, new object[] { target });
             t.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, lnk, new object[] { Path.GetDirectoryName(target) });
-            t.InvokeMember("Description", BindingFlags.SetProperty, null, lnk, new object[] { "Play Game Pass games with a Steam Controller" });
+            t.InvokeMember("Description", BindingFlags.SetProperty, null, lnk, new object[] { "Play Game Pass and Epic games with a Steam Controller" });
             t.InvokeMember("Save", BindingFlags.InvokeMethod, null, lnk, null);
         }
     }

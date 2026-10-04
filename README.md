@@ -1,16 +1,16 @@
 # SteamPassBridge
 
-Play **Xbox Game Pass / Microsoft Store PC games** with a **Steam Controller**, **DualSense**, **DualShock 4**, or any
-other controller Steam Input supports. Each controller shows up in the game as a normal Xbox controller, and the games
-get proper cover art in your Steam library.
+Play **Xbox Game Pass / Microsoft Store PC games** and **Epic Games Store games** with a **Steam Controller**,
+**DualSense**, **DualShock 4**, or any other controller Steam Input supports. Each controller shows up in the game as a
+normal Xbox controller, and the games get proper cover art in your Steam library.
 
-Windows only lets Game Pass (GDK) games see controllers through Steam Input if Steam launched them — which it can't do
-for these sandboxed games. SteamPassBridge bridges the gap: it adds each game to Steam, feeds your controller in as a
-virtual Xbox 360 pad, and (for PlayStation controllers) reads them directly so they keep working even while the game
-has focus.
+Windows only lets games see controllers through Steam Input if Steam launched them — which it can't do for sandboxed
+Game Pass (GDK) games, or for Epic games, which have to be started by the Epic Games Launcher. SteamPassBridge bridges
+the gap: it adds each game to Steam, feeds your controller in as a virtual Xbox 360 pad, and (for PlayStation
+controllers) reads them directly so they keep working even while the game has focus.
 
-> **Not affiliated with Valve or Microsoft.** Independent hobby project. Steam and Xbox Game Pass are trademarks of their
-> respective owners.
+> **Not affiliated with Valve, Microsoft or Epic Games.** Independent hobby project. Steam, Xbox Game Pass and Epic Games
+> Store are trademarks of their respective owners.
 
 ## Screenshots
 
@@ -24,14 +24,15 @@ Full-bleed Steam library artwork, generated automatically from each game's own p
 
 ## Features
 
-- **All your controllers in Game Pass games** — Steam Controller, DualSense, DualShock 4, and anything else Steam Input
+- **All your controllers in Game Pass and Epic games** — Steam Controller, DualSense, DualShock 4, and anything else Steam Input
   handles, each seen by the game as an Xbox 360 controller.
 - **Direct PlayStation support** — DualSense / DualShock 4 are read straight from HID (USB or Bluetooth), so they don't
   suffer Steam's desktop-config switching. Full buttons, sticks, triggers, **rumble**, a **per-player lightbar colour**
   and the **player-number LEDs**.
 - **Local co-op** — several controllers at once, each its own Xbox pad, hot-plugged as they connect.
-- **Automatic Steam artwork** — every added game gets a full-bleed capsule, a hero banner and an icon, generated offline
-  from the game's own packaged art. No internet, no SteamGridDB key.
+- **Automatic Steam artwork** — every added game gets a full-bleed capsule, a hero banner and an icon. Game Pass art is
+  generated offline from the game's own packaged art; Epic games use the key art the Epic launcher itself lists, fetched
+  once from Epic's CDN. No SteamGridDB key.
 - **Bundled driver** — the ViGEmBus controller driver is embedded and installed on request behind one Windows prompt.
 - **Per-user install, clean uninstall** — no admin rights; removes cleanly and keeps a backup of your Steam shortcuts.
 - **Controller Test** — a built-in screen to confirm every button, stick, trigger and rumble, with PlayStation symbols.
@@ -40,7 +41,8 @@ Full-bleed Steam library artwork, generated automatically from each game's own p
 
 - Windows 10 or 11, 64-bit
 - [Steam](https://store.steampowered.com/about/) (installed and signed in once)
-- A Game Pass PC / Microsoft Store game, installed from the Xbox app
+- A Game Pass PC / Microsoft Store game installed from the Xbox app, and/or an Epic Games Store game installed from the
+  [Epic Games Launcher](https://store.epicgames.com/download)
 - Everything else (the ViGEmBus driver) is included.
 
 ## Install
@@ -50,7 +52,8 @@ Full-bleed Steam library artwork, generated automatically from each game's own p
    registers in *Installed apps* — no administrator rights. You can delete the download afterwards.
 3. Choose **Yes** to install the controller driver when asked. It's bundled; Windows asks for permission once. (Skipped
    if you already have ViGEmBus, e.g. from DS4Windows. If it asks to restart Windows, do so once.)
-4. Tick the Game Pass games you want and press **Save to Steam**. Steam closes and reopens.
+4. Switch on the games you want (each is labelled *Game Pass* or *Epic Games*) and press **Update Steam library**. Steam
+   closes and reopens.
 5. Start the games **from your Steam library**. Customise the controller layout per game in Steam as usual.
 
 > **SmartScreen warning:** because the app isn't code-signed, Windows may say it's unrecognised. Click
@@ -74,6 +77,17 @@ Not passed through (games only see an Xbox controller): the touchpad, adaptive t
 If a game already supports PlayStation controllers natively, launch it normally instead of through SteamPassBridge, so
 it isn't seen twice.
 
+## Epic Games Store games
+
+Installed Epic games appear in the list next to your Game Pass games. A game installed from both stores is listed twice,
+with the Epic copy named *Game (Epic)*.
+
+- Starting one from Steam goes through the **Epic Games Launcher**, so sign-in, ownership checks, updates and cloud saves
+  work as usual. If the launcher isn't running it starts first, and may take a little longer.
+- The launcher stays open after you quit the game; Steam still shows the game as stopped.
+- Games with anti-cheat (Easy Anti-Cheat, BattlEye) are fine: SteamPassBridge doesn't touch the game process, it only
+  provides a virtual Xbox controller.
+
 ## Uninstall
 
 *Settings → Apps → Installed apps → SteamPassBridge → Uninstall*, or the **Uninstall** link in the app. This also
@@ -82,7 +96,8 @@ driver is left installed in case other apps use it; remove **ViGEm Bus Driver** 
 
 ## Troubleshooting
 
-- **Controller does nothing in game:** launch the game from **Steam**, not the Xbox app, and turn the controller on.
+- **Controller does nothing in game:** launch the game from **Steam**, not the Xbox app or the Epic launcher, and turn
+  the controller on.
   Open **SteamPassBridge Controller Test** from your Steam library to see exactly what's detected.
 - **A PlayStation controller shows up twice, or the game responds to a "dead" controller:** Steam is making its own copy
   as well. Set **PlayStation Controller Support** to **Off** (Steam → Settings → Controller).
@@ -90,20 +105,31 @@ driver is left installed in case other apps use it; remove **ViGEm Bus Driver** 
   (Steam → Settings → Controller).
 - **Mouse/keyboard behaviour instead of gamepad** (Steam Controller): in the game's Steam properties, keep *Use desktop
   configuration in launchers* off (SteamPassBridge sets this). PlayStation controllers avoid this entirely.
-- **Library art didn't change:** restart Steam, or run `SteamPassBridge art` and restart Steam.
+- **An Epic game doesn't start:** open the Epic Games Launcher and make sure you're signed in and the game isn't waiting
+  on an update, then launch it from Steam again.
+- **Library art didn't change:** restart Steam, or run `SteamPassBridge art` and restart Steam. For Epic games this also
+  re-downloads the key art (useful when a game changes its art for a new season).
 - **Log file:** `%LOCALAPPDATA%\Programs\SteamPassBridge\SteamPassBridge.log`.
 
 ## How it works
 
 Steam Input only exposes a controller as a gamepad **inside processes Steam launched** (it injects
 `gameoverlayrenderer64.dll` and presents a "Steam Virtual Gamepad"). Game Pass games are sandboxed packages started by
-Windows, so they never see it, and adding `gamelaunchhelper.exe` to Steam fails because it exits immediately.
+Windows, so they never see it, and adding `gamelaunchhelper.exe` to Steam fails because it exits immediately. Epic games
+are started by the Epic Games Launcher (which handles ownership and cloud saves), so they're never Steam's process either.
 
-SteamPassBridge adds each game to Steam as a shortcut that runs `SteamPassBridge.exe launch <package>`. Because Steam
+SteamPassBridge adds each game to Steam as a shortcut that runs `SteamPassBridge.exe launch <id>`. Because Steam
 launches it, Steam Input feeds the controller into it. The tool mirrors that input onto a virtual Xbox 360 controller
-(ViGEmBus, ~1 ms polling) that the whole system can see, sends the game's rumble back, starts the game through Windows,
-and stays alive until the game fully exits so Steam keeps the game layout active. The virtual pad disappears when the
-tool exits, even on a crash.
+(ViGEmBus, ~1 ms polling) that the whole system can see, sends the game's rumble back, starts the game, and stays alive
+until the game fully exits so Steam keeps the game layout active. The virtual pad disappears when the tool exits, even
+on a crash.
+
+- **Game Pass** games are found in the AppX package repository (packages with a `MicrosoftGame.config`), started with
+  `IApplicationActivationManager`, and tracked by package family name.
+- **Epic** games are found from the launcher's install manifests (`%ProgramData%\Epic\EpicGamesLauncher\Data\Manifests`),
+  started through the launcher's `com.epicgames.launcher://apps/…?action=launch` link, and tracked as any process
+  running from the game's install folder. The link is handed to Explorer so that a launcher that has to start up isn't a
+  child of the shortcut — otherwise Steam would keep showing the game as running while the launcher is open.
 
 **PlayStation controllers take a more direct path.** Steam keeps a controller in its game layout only while the game's
 own window is focused; a Game Pass window isn't Steam's, so Steam reverts to the desktop (mouse/keyboard) layout and the
@@ -112,16 +138,19 @@ reports, and drives the virtual Xbox pad from that — no Steam Input in the loo
 lightbar are written back over the same HID channel (with the Bluetooth CRC when needed). A Steam Input slot that turns
 out to be the same physical PlayStation pad is suppressed, so a controller is never bridged twice.
 
-**Artwork** is generated from each game's packaged art (`MicrosoftGame.config` splash and logos) into Steam's
-`userdata\<id>\config\grid` folder, keyed by the shortcut's app id — the same scheme SteamGridDB tools use.
+**Artwork** is written into Steam's `userdata\<id>\config\grid` folder, keyed by the shortcut's app id — the same scheme
+SteamGridDB tools use. Game Pass art comes from each game's packaged art (`MicrosoftGame.config` splash and logos), with
+no network access. Epic art uses the wide and tall key art listed in the launcher's own catalog cache (`catcache.bin`),
+downloaded once from Epic's CDN into `%LOCALAPPDATA%\SteamPassBridge\art\epic`; the icon is taken from the game's exe.
+Without a connection, Epic games get a capsule built from their icon, replaced by the key art on a later sync.
 
 ### Command line
 
 ```
-SteamPassBridge list                    list installed Game Pass games
-SteamPassBridge sync [family...]         add games to Steam (all if none given); restarts Steam
+SteamPassBridge list                    list installed Game Pass and Epic games with their ids
+SteamPassBridge sync [id...]             add games to Steam (all if none given); restarts Steam
 SteamPassBridge art                      regenerate Steam library artwork for the added games
-SteamPassBridge launch <family>          used by the Steam shortcuts: bridge controllers + run the game
+SteamPassBridge launch <id>              used by the Steam shortcuts: bridge controllers + run the game
 SteamPassBridge test                     the Controller Test window
 SteamPassBridge install                  install for this Windows user
 SteamPassBridge install-driver           install the bundled ViGEmBus driver
@@ -153,7 +182,9 @@ safe testing.
 | Area | Files |
 |------|-------|
 | Entry point, CLI, game launch | `src/Program.cs` |
-| Game Pass discovery & artwork sources | `src/Games.cs` |
+| Game model, Game Pass discovery & artwork sources | `src/Games.cs` |
+| Epic Games discovery, launch & key art | `src/Epic.cs` |
+| Starting games and waiting for them to exit | `src/Launcher.cs` |
 | Steam shortcuts (binary VDF) & grid folders | `src/Steam.cs`, `src/Vdf.cs` |
 | Controller bridging | `src/Bridge.cs`, `src/XInput.cs`, `src/ViGEm.cs` |
 | Direct PlayStation HID | `src/Hid.cs`, `src/DualShock.cs`, `src/Controllers.cs` |

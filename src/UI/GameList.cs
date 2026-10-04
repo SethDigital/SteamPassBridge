@@ -9,12 +9,12 @@ using System.Windows.Forms;
 
 namespace SteamPassBridge
 {
-    // Owner-drawn list of Game Pass games: tile art, name, Steam status and a switch per game.
+    // Owner-drawn list of Game Pass and Epic games: tile art, name, store, Steam status and a switch per game.
     class GameList : ScrollableControl
     {
         class Row
         {
-            public GamePassGame Game;
+            public Game Game;
             public bool InSteam, On;
             public float Knob, Glow;
             public Image Logo;
@@ -36,19 +36,19 @@ namespace SteamPassBridge
                      ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
             AutoScroll = true;
             TabStop = true;
-            AccessibleName = "Game Pass games";
+            AccessibleName = "Your games";
             AccessibleRole = AccessibleRole.List;
             anim.Tick += delegate { Animate(); };
         }
 
         public int Count { get { return rows.Count; } }
         public int InSteamCount { get { return rows.Count(r => r.InSteam); } }
-        public List<GamePassGame> Chosen { get { return rows.Where(r => r.On).Select(r => r.Game).ToList(); } }
+        public List<Game> Chosen { get { return rows.Where(r => r.On).Select(r => r.Game).ToList(); } }
         public List<string> ToAdd { get { return rows.Where(r => r.On && !r.InSteam).Select(r => r.Game.Name).ToList(); } }
         public List<string> ToRemove { get { return rows.Where(r => !r.On && r.InSteam).Select(r => r.Game.Name).ToList(); } }
         public bool AllOn { get { return rows.Count > 0 && rows.All(r => r.On); } }
 
-        public void SetGames(IList<GamePassGame> games, ICollection<string> inSteam)
+        public void SetGames(IList<Game> games, ICollection<string> inSteam)
         {
             foreach (var r in rows) if (r.Logo != null) r.Logo.Dispose();
             rows.Clear();
@@ -240,6 +240,11 @@ namespace SteamPassBridge
             else { status = "Not in Steam"; color = p.Muted; }
             int sy = rect.Y + Theme.S(37);
             int sx = textX;
+            // Store first, in muted text, so the Steam status keeps its colour.
+            string store = r.Game.StoreName + " · ";
+            int storeW = Theme.Measure(store, Theme.Small).Width;
+            Theme.Text(g, store, Theme.Small, p.Muted, new Rectangle(sx, sy, Math.Min(storeW + 2, textW), Theme.S(18)), TextFormatFlags.Left);
+            sx += storeW;
             if (dot)
             {
                 int d = Theme.S(7);
@@ -257,9 +262,9 @@ namespace SteamPassBridge
             Theme.Fill(g, box, Theme.S(14), p.Tile);
             Theme.Glyph(g, Theme.GlyphGamepad, 20f, p.Muted, box);
             var r1 = new Rectangle(0, box.Bottom + Theme.S(16), ClientSize.Width, Theme.S(24));
-            Theme.Text(g, "No Game Pass PC games installed yet", Theme.Heading, p.Text, r1, TextFormatFlags.HorizontalCenter);
+            Theme.Text(g, "No Game Pass or Epic games installed yet", Theme.Heading, p.Text, r1, TextFormatFlags.HorizontalCenter);
             var r2 = new Rectangle(Theme.S(24), r1.Bottom + Theme.S(6), ClientSize.Width - Theme.S(48), Theme.S(40));
-            Theme.Text(g, "Install a PC game from the Xbox app, then press Refresh.", Theme.Body, p.Muted, r2,
+            Theme.Text(g, "Install a PC game from the Xbox app or the Epic Games Launcher, then press Refresh.", Theme.Body, p.Muted, r2,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.WordBreak);
         }
 

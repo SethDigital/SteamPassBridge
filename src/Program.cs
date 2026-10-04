@@ -82,12 +82,12 @@ namespace SteamPassBridge
                     default:
                         AttachConsole(-1);
                         Console.WriteLine();
-                        Console.WriteLine("SteamPassBridge " + Version + " - play Game Pass games with a Steam Controller");
+                        Console.WriteLine("SteamPassBridge " + Version + " - play Game Pass and Epic games with a Steam Controller");
                         Console.WriteLine("  (no args)        open the setup window");
-                        Console.WriteLine("  list             list installed Game Pass games");
-                        Console.WriteLine("  sync [family..]  add games to Steam (all games if none given); restarts Steam");
+                        Console.WriteLine("  list             list installed Game Pass and Epic games with their ids");
+                        Console.WriteLine("  sync [id..]      add games to Steam (all games if none given); restarts Steam");
                         Console.WriteLine("  art              regenerate Steam library artwork for the added games");
-                        Console.WriteLine("  launch <family>  used by the Steam shortcuts: bridge controller + run game");
+                        Console.WriteLine("  launch <id>      used by the Steam shortcuts: bridge controller + run game");
                         Console.WriteLine("  test             live view of what Steam Input sends (launch from Steam)");
                         Console.WriteLine("  install          install for this Windows user (no admin needed)");
                         Console.WriteLine("  install-driver   install the bundled ViGEmBus driver (asks for admin)");
@@ -122,23 +122,24 @@ namespace SteamPassBridge
             catch { }
         }
 
-        static int Launch(string family)
+        // `id` is a Game Pass package family name (the original shortcut format) or "epic:<AppName>".
+        static int Launch(string id)
         {
-            var game = family == null ? null : Games.ByFamily(family);
-            if (game == null) throw new Exception("Game Pass game not found: " + family + ". Is it still installed?");
-            Log("launch " + game.Name + " (" + game.Aumid + "); steam hooks: " + SteamModules());
+            var game = id == null ? null : Games.ById(id);
+            if (game == null) throw new Exception("Game not found: " + id + ". Is it still installed?");
+            Log("launch " + game.Name + " (" + (game.Store == Store.Epic ? EpicGames.LaunchUri(game) : game.Aumid) + "); steam hooks: " + SteamModules());
 
             // Mutex per game so a double-click in Steam doesn't create two sets of virtual pads.
             bool created;
-            using (var mutex = new Mutex(true, @"Local\SteamPassBridge_" + game.FamilyName, out created))
+            using (var mutex = new Mutex(true, @"Local\SteamPassBridge_" + game.Id, out created))
             {
-                if (!created) { Launcher.Activate(game.Aumid); return 0; }
+                if (!created) { Launcher.Start(game); return 0; }
 
                 if (!EnsureDriverForLaunch(game.Name))
                 {
                     // Still start the game; it just won't see the Steam Controller.
-                    Launcher.Activate(game.Aumid);
-                    Launcher.WaitForGame(game.FamilyName, TimeSpan.FromMinutes(3));
+                    Launcher.Start(game);
+                    Launcher.WaitForGame(game);
                     return 0;
                 }
 
@@ -150,8 +151,8 @@ namespace SteamPassBridge
                     Thread.Sleep(bridge.PadCount > 0 ? 500 : 0);
                     if (bridge.PadCount == 0) Log("no Steam virtual pad yet (controller off?); will bridge when it appears");
 
-                    Launcher.Activate(game.Aumid);
-                    Launcher.WaitForGame(game.FamilyName, TimeSpan.FromMinutes(3));
+                    Launcher.Start(game);
+                    Launcher.WaitForGame(game);
                 }
             }
             return 0;
@@ -189,15 +190,15 @@ namespace SteamPassBridge
         static int List()
         {
             Console.WriteLine();
-            foreach (var g in Games.Find()) Console.WriteLine(g.Name.PadRight(40) + " " + g.FamilyName);
+            foreach (var g in Games.Find()) Console.WriteLine(g.Name.PadRight(40) + " " + g.StoreName.PadRight(11) + " " + g.Id);
             return 0;
         }
 
-        static int Sync(List<string> families)
+        static int Sync(List<string> ids)
         {
             var all = Games.Find();
-            var chosen = families.Count == 0 ? all
-                : all.Where(g => families.Any(f => string.Equals(f, g.FamilyName, StringComparison.OrdinalIgnoreCase))).ToList();
+            var chosen = ids.Count == 0 ? all
+                : all.Where(g => ids.Any(id => string.Equals(id, g.Id, StringComparison.OrdinalIgnoreCase))).ToList();
             var added = SyncToSteam(chosen, null, true);
             Console.WriteLine();
             Console.WriteLine("Added/updated " + added + " shortcut(s) in Steam.");
@@ -206,7 +207,7 @@ namespace SteamPassBridge
 
         // Writes shortcuts for the given games (plus the controller-test entry), removing any of our
         // shortcuts listed in `remove`. Steam is closed while the file is edited and reopened afterwards.
-        public static int SyncToSteam(IList<GamePassGame> games, IList<string> remove, bool includeTest)
+        public static int SyncToSteam(IList<Game> games, IList<string> remove, bool includeTest)
         {
             var gridDirs = Steam.GridDirs();
             var specs = games.Select(g =>
@@ -219,8 +220,9 @@ namespace SteamPassBridge
                     AppName = g.Name,
                     Exe = ExePath,
                     StartDir = ExeDir,
-                    LaunchOptions = "launch " + g.FamilyName,
+                    LaunchOptions = "launch " + g.Id,
                     Icon = icon,
+                    Tag = g.StoreName,
                 };
             }).ToList();
             if (includeTest)

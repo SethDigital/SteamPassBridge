@@ -12,5 +12,5 @@ if not exist "%~dp0bin" mkdir "%~dp0bin"
 "%CSC%" -nologo -target:winexe -platform:x64 -optimize+ -out:"%~dp0bin\SteamPassBridge.exe" ^
   -win32icon:"%~dp0assets\app.ico" -win32manifest:"%~dp0assets\app.manifest" ^
   -resource:"%~dp0vendor\ViGEmBus_1.22.0_x64_x86_arm64.exe",ViGEmBusSetup.exe ^
-  -r:System.Windows.Forms.dll -r:System.Drawing.dll -r:System.Xml.dll -r:System.Xml.Linq.dll -r:System.Core.dll ^
+  -r:System.Windows.Forms.dll -r:System.Drawing.dll -r:System.Xml.dll -r:System.Xml.Linq.dll -r:System.Core.dll -r:System.Web.Extensions.dll ^
   -recurse:"%~dp0src\*.cs"

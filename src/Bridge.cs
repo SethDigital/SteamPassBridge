@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace SteamPassBridge
 {
-    // Turns physical controllers into system-wide ViGEm Xbox 360 pads that Game Pass games can see.
+    // Turns physical controllers into system-wide ViGEm Xbox 360 pads that Game Pass and Epic games can see.
     //
     // Two independent sources feed the same virtual pads:
     //   * Steam Input slots (28DE) — the Steam Controller and anything else Steam hands us. Mirrored while

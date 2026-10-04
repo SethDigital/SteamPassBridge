@@ -9,18 +9,30 @@ using Microsoft.Win32;
 
 namespace SteamPassBridge
 {
-    class GamePassGame
+    enum Store { GamePass, Epic }
+
+    class Game
     {
+        public Store Store;
         public string Name;          // display name, e.g. "Crimson Desert"
-        public string FamilyName;    // e.g. PearlAbyss.CrimsonDesert_bs8qf1ajnj9cw
-        public string AppId;         // Application Id from AppxManifest
+        public string Id;            // what `launch` takes: the package family name, or "epic:<AppName>"
         public string InstallDir;
         public string Version;
-        public string LogoPath;      // square tile art from MicrosoftGame.config, may be null
+        public string LogoPath;      // square tile art, may be null
         public string BigLogoPath;   // largest square logo (up to 480x480) for the icon and capsule
-        public string SplashPath;    // 1920x1080 key-art splash, used for hero/capsule backgrounds
+        public string SplashPath;    // landscape key art, used for hero/capsule backgrounds
+        public string PortraitPath;  // portrait key art for the capsule, may be null (Epic only)
         public string LogoBackground; // "#rrggbb" tile colour behind transparent logos, may be null
+
+        // Game Pass
+        public string FamilyName;    // e.g. PearlAbyss.CrimsonDesert_bs8qf1ajnj9cw
+        public string AppId;         // Application Id from AppxManifest
         public string Aumid { get { return FamilyName + "!" + AppId; } }
+
+        // Epic Games Store
+        public string EpicAppName, EpicNamespace, EpicCatalogItemId;
+
+        public string StoreName { get { return Store == Store.Epic ? "Epic Games" : "Game Pass"; } }
         public override string ToString() { return Name; }
     }
 
@@ -31,13 +43,36 @@ namespace SteamPassBridge
         [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
         static extern int SHLoadIndirectString(string source, StringBuilder outBuf, int cch, IntPtr reserved);
 
-        // Game Pass / Microsoft Store PC games are the packages that carry a MicrosoftGame.config (GDK titles).
-        public static List<GamePassGame> Find()
+        // Every supported game: Game Pass packages plus Epic Games Store installs.
+        public static List<Game> Find()
         {
-            var byFamily = new Dictionary<string, GamePassGame>(StringComparer.OrdinalIgnoreCase);
+            var all = FindGamePass();
+            var names = new HashSet<string>(all.Select(g => g.Name), StringComparer.CurrentCultureIgnoreCase);
+            List<Game> epic;
+            try { epic = EpicGames.Find(); }
+            catch (Exception ex) { Program.Log("skipping Epic games: " + ex.Message); epic = new List<Game>(); }
+            foreach (var g in epic)
+            {
+                // Our Steam shortcuts are matched by name, so a game installed from both stores needs its own.
+                if (names.Contains(g.Name)) g.Name += " (Epic)";
+                names.Add(g.Name);
+                all.Add(g);
+            }
+            return all.OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        }
+
+        public static Game ById(string id)
+        {
+            return Find().FirstOrDefault(g => string.Equals(g.Id, id, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Game Pass / Microsoft Store PC games are the packages that carry a MicrosoftGame.config (GDK titles).
+        static List<Game> FindGamePass()
+        {
+            var byFamily = new Dictionary<string, Game>(StringComparer.OrdinalIgnoreCase);
             using (var repo = Registry.CurrentUser.OpenSubKey(RepoKey))
             {
-                if (repo == null) return new List<GamePassGame>();
+                if (repo == null) return new List<Game>();
                 foreach (var fullName in repo.GetSubKeyNames())
                 {
                     try
@@ -56,9 +91,12 @@ namespace SteamPassBridge
 
                             var parts = fullName.Split('_'); // Name_Version_Arch_ResourceId_PublisherId
                             if (parts.Length < 5) continue;
-                            var game = new GamePassGame
+                            var family = parts[0] + "_" + parts[parts.Length - 1];
+                            var game = new Game
                             {
-                                FamilyName = parts[0] + "_" + parts[parts.Length - 1],
+                                Store = Store.GamePass,
+                                Id = family,
+                                FamilyName = family,
                                 Version = parts[1],
                                 AppId = app.Attribute("Id").Value,
                                 InstallDir = root,
@@ -66,7 +104,7 @@ namespace SteamPassBridge
                             };
                             ReadVisuals(game, root);
 
-                            GamePassGame existing;
+                            Game existing;
                             if (!byFamily.TryGetValue(game.FamilyName, out existing) || NewerThan(game.Version, existing.Version))
                                 byFamily[game.FamilyName] = game;
                         }
@@ -74,12 +112,7 @@ namespace SteamPassBridge
                     catch (Exception ex) { Program.Log("skipping package " + fullName + ": " + ex.Message); }
                 }
             }
-            return byFamily.Values.OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
-        }
-
-        public static GamePassGame ByFamily(string family)
-        {
-            return Find().FirstOrDefault(g => string.Equals(g.FamilyName, family, StringComparison.OrdinalIgnoreCase));
+            return byFamily.Values.ToList();
         }
 
         static string ResolveName(string registryName, string root, string fallback)
@@ -101,7 +134,7 @@ namespace SteamPassBridge
             return fallback;
         }
 
-        static void ReadVisuals(GamePassGame game, string root)
+        static void ReadVisuals(Game game, string root)
         {
             try
             {

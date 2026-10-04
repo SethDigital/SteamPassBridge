@@ -9,7 +9,7 @@ namespace SteamPassBridge
 {
     class ShortcutSpec
     {
-        public string AppName, Exe, StartDir, LaunchOptions, Icon;
+        public string AppName, Exe, StartDir, LaunchOptions, Icon, Tag;
     }
 
     static class Steam
@@ -143,7 +143,7 @@ namespace SteamPassBridge
                         entry.Set("DevkitOverrideAppID", VdfNode.Int, 0);
                         entry.Set("LastPlayTime", VdfNode.Int, 0);
                         entry.Set("FlatpakAppID", VdfNode.Str, "");
-                        entry.Set("tags", VdfNode.Map, new List<VdfNode> { new VdfNode(VdfNode.Str, "0", "Game Pass") });
+                        entry.Set("tags", VdfNode.Map, new List<VdfNode> { new VdfNode(VdfNode.Str, "0", s.Tag ?? "Game Pass") });
                     }
                     else
                     {

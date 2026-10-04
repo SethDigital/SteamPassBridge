@@ -7,10 +7,11 @@ using System.IO;
 
 namespace SteamPassBridge
 {
-    // Builds Steam library artwork for the non-Steam shortcuts from each game's own packaged art:
-    // a portrait capsule, a hero banner and a landscape grid from the 1920x1080 splash, plus a
-    // multi-size .ico from the square logo. Written into every Steam user's config\grid folder,
-    // keyed by the shortcut's (unsigned) app id, the same scheme SteamGridDB tools use.
+    // Builds Steam library artwork for the non-Steam shortcuts from each game's own art: a portrait
+    // capsule, a hero banner and a landscape grid from the key art (Game Pass: the 1920x1080 splash;
+    // Epic: the launcher's wide and tall key art), plus a multi-size .ico from the square logo. Written
+    // into every Steam user's config\grid folder, keyed by the shortcut's (unsigned) app id, the same
+    // scheme SteamGridDB tools use.
     static class Artwork
     {
         public static string ArtDir
@@ -19,11 +20,14 @@ namespace SteamPassBridge
         }
 
         // Returns the icon path to store in shortcuts.vdf, or null if nothing could be generated.
-        public static string WriteForGame(GamePassGame game, uint appId, IList<string> gridDirs, bool force)
+        public static string WriteForGame(Game game, uint appId, IList<string> gridDirs, bool force)
         {
             string icon = null;
             try
             {
+                // Newly arrived key art replaces any fallback capsule made while it was missing (e.g. offline).
+                if (EpicGames.FetchArt(game, force)) force = true;
+
                 Directory.CreateDirectory(ArtDir);
                 icon = Path.Combine(ArtDir, appId + ".ico");
                 if (force || !File.Exists(icon))
@@ -33,13 +37,14 @@ namespace SteamPassBridge
                 }
 
                 using (var splash = Load(game.SplashPath))
+                using (var portrait = Load(game.PortraitPath))
                 using (var logo = Load(game.BigLogoPath ?? game.LogoPath))
                 {
                     var bg = ParseColor(game.LogoBackground);
                     foreach (var dir in gridDirs)
                     {
                         if (!Directory.Exists(dir)) { try { Directory.CreateDirectory(dir); } catch { continue; } }
-                        Write(Path.Combine(dir, appId + "p.png"), force, () => Portrait(splash, logo, bg));
+                        Write(Path.Combine(dir, appId + "p.png"), force, () => Portrait(portrait ?? splash, logo, bg));
                         Write(Path.Combine(dir, appId + "_hero.png"), force, () => Cover(splash, 1920, 620, bg));
                         Write(Path.Combine(dir, appId + ".png"), force, () => Cover(splash, 920, 430, bg));
                     }

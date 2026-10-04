@@ -261,7 +261,7 @@ namespace SteamPassBridge
             RunSync(list.Chosen, removed, title, detail);
         }
 
-        void RunSync(List<GamePassGame> chosen, List<string> removed, string doneTitle, string doneDetail)
+        void RunSync(List<Game> chosen, List<string> removed, string doneTitle, string doneDetail)
         {
             Program.Log("sync " + chosen.Count + " game(s), removing " + (removed == null ? 0 : removed.Count));
             working = true;
@@ -421,7 +421,7 @@ namespace SteamPassBridge
             Theme.Fill(g, markRect, Theme.S(12), p.Accent);
             Theme.Glyph(g, Theme.GlyphGamepad, 17f, p.OnAccent, markRect);
             Theme.Text(g, "SteamPassBridge", Theme.Title, p.Text, titleRect, TextFormatFlags.Left);
-            Theme.Text(g, "Play Game Pass with your Steam or PlayStation controller", Theme.Body, p.Muted, subtitleRect, TextFormatFlags.Left);
+            Theme.Text(g, "Play Game Pass and Epic games with your controller", Theme.Body, p.Muted, subtitleRect, TextFormatFlags.Left);
             PaintChips(g);
 
             if (steps.Count > 0)
@@ -431,10 +431,10 @@ namespace SteamPassBridge
                 for (int i = 0; i < steps.Count; i++) PaintStep(g, steps[i], stepRows[i], i > 0);
             }
 
-            Theme.Text(g, "Your Game Pass games", Theme.Heading, p.Text, gamesHeading, TextFormatFlags.Left);
+            Theme.Text(g, "Your games", Theme.Heading, p.Text, gamesHeading, TextFormatFlags.Left);
             if (list.Count > 0)
             {
-                int hw = Theme.Measure("Your Game Pass games", Theme.Heading).Width;
+                int hw = Theme.Measure("Your games", Theme.Heading).Width;
                 string count = list.Count + " installed · " + list.InSteamCount + " in Steam";
                 Theme.Text(g, count, Theme.Small, p.Muted,
                     new Rectangle(gamesHeading.X + hw + Theme.S(12), gamesHeading.Y + Theme.S(5), refresh.Left - gamesHeading.X - hw - Theme.S(20), Theme.S(18)),
